@@ -33,7 +33,7 @@ class AmazonInappPurchasePlugin : MethodCallHandler {
     }
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
-        if(call.method == "getStore"){
+        if (call.method == "getStore") {
             result.success(FlutterInappPurchasePlugin.getStore())
             return
         }
@@ -44,9 +44,9 @@ class AmazonInappPurchasePlugin : MethodCallHandler {
             PurchasingService.registerListener(context, purchasesUpdatedListener)
         } catch (e: Exception) {
             safeResult!!.error(
-                call.method,
-                "Call endConnection method if you want to start over.",
-                e.message
+                    call.method,
+                    "Call endConnection method if you want to start over.",
+                    e.message
             )
         }
         when (call.method) {
@@ -54,23 +54,28 @@ class AmazonInappPurchasePlugin : MethodCallHandler {
                 PurchasingService.getUserData()
                 safeResult!!.success("Billing client ready")
             }
+
             "endConnection" -> {
                 safeResult!!.success("Billing client has ended.")
             }
+
             "isReady" -> {
                 safeResult!!.success(true)
             }
+
             "showInAppMessages" -> {
                 safeResult!!.success("in app messages not supported for amazon")
             }
+
             "consumeAllItems" -> {
                 // consumable is a separate type in amazon
                 safeResult!!.success("no-ops in amazon")
             }
+
             "getProducts",
             "getSubscriptions" -> {
                 Log.d(TAG, call.method)
-                val skus = call.argument<ArrayList<String>>("skus")!!
+                val skus = call.argument<ArrayList<String>>("productIds")!!
                 val productSkus: MutableSet<String> = HashSet()
                 for (i in skus.indices) {
                     Log.d(TAG, "Adding " + skus[i])
@@ -78,6 +83,7 @@ class AmazonInappPurchasePlugin : MethodCallHandler {
                 }
                 PurchasingService.getProductData(productSkus)
             }
+
             "getAvailableItemsByType" -> {
                 val type = call.argument<String>("type")
                 Log.d(TAG, "gaibt=$type")
@@ -91,25 +97,34 @@ class AmazonInappPurchasePlugin : MethodCallHandler {
                     safeResult!!.notImplemented()
                 }
             }
+
             "getPurchaseHistoryByType" -> {
                 // No equivalent
                 safeResult!!.success("[]")
             }
+
             "buyItemByType" -> {
                 val type = call.argument<String>("type")
                 //val obfuscatedAccountId = call.argument<String>("obfuscatedAccountId")
                 //val obfuscatedProfileId = call.argument<String>("obfuscatedProfileId")
-                val sku = call.argument<String>("sku")
+                val sku = call.argument<String>("productId")
                 val oldSku = call.argument<String>("oldSku")
                 //val prorationMode = call.argument<Int>("prorationMode")!!
                 Log.d(TAG, "type=$type||sku=$sku||oldsku=$oldSku")
                 val requestId = PurchasingService.purchase(sku)
                 Log.d(TAG, "resid=$requestId")
             }
+
             "consumeProduct" -> {
                 // consumable is a separate type in amazon
                 safeResult!!.success("no-ops in amazon")
             }
+
+            "acknowledgePurchase" -> {
+                PurchasingService.notifyFulfillment(call.argument<String>("receipt"), FulfillmentResult.FULFILLED)
+                safeResult!!.success("acknowledged purchase")
+            }
+
             else -> {
                 safeResult!!.notImplemented()
             }
@@ -129,15 +144,15 @@ class AmazonInappPurchasePlugin : MethodCallHandler {
             when (status) {
                 ProductDataResponse.RequestStatus.SUCCESSFUL -> {
                     Log.d(
-                        TAG,
-                        "onProductDataResponse: successful.  The item data map in this response includes the valid SKUs"
+                            TAG,
+                            "onProductDataResponse: successful.  The item data map in this response includes the valid SKUs"
                     )
                     val productData = response.productData
                     //Log.d(TAG, "productData="+productData.toString());
                     val unavailableSkus = response.unavailableSkus
                     Log.d(
-                        TAG,
-                        "onProductDataResponse: " + unavailableSkus.size + " unavailable skus"
+                            TAG,
+                            "onProductDataResponse: " + unavailableSkus.size + " unavailable skus"
                     )
                     Log.d(TAG, "unavailableSkus=$unavailableSkus")
                     val items = JSONArray()
@@ -150,9 +165,10 @@ class AmazonInappPurchasePlugin : MethodCallHandler {
                             item.put("currency", null)
                             when (product.productType) {
                                 ProductType.ENTITLED, ProductType.CONSUMABLE -> item.put(
-                                    "type",
-                                    "inapp"
+                                        "type",
+                                        "inapp"
                                 )
+
                                 ProductType.SUBSCRIPTION -> item.put("type", "subs")
                             }
                             item.put("localizedPrice", product.price)
@@ -172,11 +188,13 @@ class AmazonInappPurchasePlugin : MethodCallHandler {
                         safeResult!!.error(TAG, "E_BILLING_RESPONSE_JSON_PARSE_ERROR", e.message)
                     }
                 }
+
                 ProductDataResponse.RequestStatus.FAILED -> {
                     safeResult!!.error(TAG, "FAILED", null)
                     Log.d(TAG, "onProductDataResponse: failed, should retry request")
-                    safeResult!!.error(TAG, "NOT_SUPPORTED", null)
+//                    safeResult!!.error(TAG, "NOT_SUPPORTED", null)
                 }
+
                 ProductDataResponse.RequestStatus.NOT_SUPPORTED -> {
                     Log.d(TAG, "onProductDataResponse: failed, should retry request")
                     safeResult!!.error(TAG, "NOT_SUPPORTED", null)
@@ -191,17 +209,17 @@ class AmazonInappPurchasePlugin : MethodCallHandler {
                 PurchaseResponse.RequestStatus.SUCCESSFUL -> {
                     val receipt = response.receipt
                     PurchasingService.notifyFulfillment(
-                        receipt.receiptId,
-                        FulfillmentResult.FULFILLED
+                            receipt.receiptId,
+                            FulfillmentResult.FULFILLED
                     )
                     val date = receipt.purchaseDate
                     val transactionDate = date.time
                     try {
                         val item = getPurchaseData(
-                            receipt.sku,
-                            receipt.receiptId,
-                            receipt.receiptId,
-                            transactionDate.toDouble()
+                                receipt.sku,
+                                receipt.receiptId,
+                                receipt.receiptId,
+                                transactionDate.toDouble()
                         )
                         Log.d(TAG, "opr Putting $item")
                         safeResult!!.success(item.toString())
@@ -210,11 +228,20 @@ class AmazonInappPurchasePlugin : MethodCallHandler {
                         safeResult!!.error(TAG, "E_BILLING_RESPONSE_JSON_PARSE_ERROR", e.message)
                     }
                 }
-                PurchaseResponse.RequestStatus.FAILED -> safeResult!!.error(
-                    TAG,
-                    "buyItemByType",
-                    "billingResponse is not ok: $status"
-                )
+
+                PurchaseResponse.RequestStatus.FAILED -> {
+                    val json = JSONObject()
+                    json.put("message", "Unknown Error")
+                    safeResult!!.invokeMethod("purchase-error", json.toString())
+                    Log.d(TAG, "iap request failed")
+
+//                    safeResult!!.error(
+//                            TAG,
+//                            "buyItemByType",
+//                            "billingResponse is not ok: $status"
+//                    )
+                }
+
                 else -> {}
             }
         }
@@ -231,10 +258,10 @@ class AmazonInappPurchasePlugin : MethodCallHandler {
                             val date = receipt.purchaseDate
                             val transactionDate = date.time
                             val item = getPurchaseData(
-                                receipt.sku,
-                                receipt.receiptId,
-                                receipt.receiptId,
-                                transactionDate.toDouble()
+                                    receipt.sku,
+                                    receipt.receiptId,
+                                    receipt.receiptId,
+                                    transactionDate.toDouble()
                             )
                             Log.d(TAG, "opudr Putting $item")
                             items.put(item)
@@ -244,11 +271,13 @@ class AmazonInappPurchasePlugin : MethodCallHandler {
                         safeResult!!.error(TAG, "E_BILLING_RESPONSE_JSON_PARSE_ERROR", e.message)
                     }
                 }
+
                 PurchaseUpdatesResponse.RequestStatus.FAILED -> safeResult!!.error(
-                    TAG,
-                    "FAILED",
-                    null
+                        TAG,
+                        "FAILED",
+                        null
                 )
+
                 PurchaseUpdatesResponse.RequestStatus.NOT_SUPPORTED -> {
                     Log.d(TAG, "onPurchaseUpdatesResponse: failed, should retry request")
                     safeResult!!.error(TAG, "NOT_SUPPORTED", null)
@@ -259,8 +288,8 @@ class AmazonInappPurchasePlugin : MethodCallHandler {
 
     @Throws(JSONException::class)
     fun getPurchaseData(
-        productId: String?, transactionId: String?, transactionReceipt: String?,
-        transactionDate: Double?
+            productId: String?, transactionId: String?, transactionReceipt: String?,
+            transactionDate: Double?
     ): JSONObject {
         val item = JSONObject()
         item.put("productId", productId)

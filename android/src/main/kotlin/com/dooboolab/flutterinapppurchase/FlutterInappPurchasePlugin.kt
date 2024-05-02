@@ -9,11 +9,14 @@ import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.PluginRegistry.Registrar
 import android.content.pm.PackageManager.NameNotFoundException
+import android.util.Log
+import android.widget.Toast
 
 /** FlutterInappPurchasePlugin  */
 class FlutterInappPurchasePlugin : FlutterPlugin, ActivityAware {
     private var androidInappPurchasePlugin: AndroidInappPurchasePlugin? = null
     private var amazonInappPurchasePlugin: AmazonInappPurchasePlugin? = null
+    private var samsungInappPurchasePlugin: SamsungInappPurchasePlugin? = null
     private var channel: MethodChannel? = null
     override fun onAttachedToEngine(binding: FlutterPluginBinding) {
         onAttached(binding.applicationContext, binding.binaryMessenger)
@@ -22,16 +25,44 @@ class FlutterInappPurchasePlugin : FlutterPlugin, ActivityAware {
     private fun onAttached(context: Context, messenger: BinaryMessenger) {
         isAndroid = isPackageInstalled(context, "com.android.vending")
         isAmazon = isPackageInstalled(context, "com.amazon.venezia")
+        isSamsung = isPackageInstalled(context, "com.sec.android.app.samsungapps")
+        Log.d("Is Samsung value", isSamsung.toString())
+
+        if(BuildConfig.DEBUG) {
+            Toast.makeText(context,"Samsung Amazon Android $isSamsung  $isAmazon $isAndroid", Toast.LENGTH_LONG).show()
+        }
+
+//        if(BuildConfig.DEBUG){
+//            isAndroid = false;
+//            isAmazon = true;
+//        }
 
         // In the case of an amazon device which has been side loaded with the Google Play store,
         // we should use the store the app was installed from.
         if (isAmazon && isAndroid) {
             if (isAppInstalledFrom(context, "amazon")) {
                 isAndroid = false
+
             } else {
                 isAmazon = false
             }
         }
+
+        else if(isSamsung && isAndroid) {
+            if(isAppInstalledFrom(context, "samsungapps")) {
+                isAndroid = false
+            } else {
+                isSamsung = false
+            }
+        }
+
+//to test samsung iap
+//        if(BuildConfig.DEBUG) {
+//            isSamsung = true
+//            isAndroid = false
+//        }
+
+
         channel = MethodChannel(messenger, "flutter_inapp")
         if (isAndroid) {
             androidInappPurchasePlugin = AndroidInappPurchasePlugin()
@@ -43,6 +74,11 @@ class FlutterInappPurchasePlugin : FlutterPlugin, ActivityAware {
             amazonInappPurchasePlugin!!.setContext(context)
             amazonInappPurchasePlugin!!.setChannel(channel)
             channel!!.setMethodCallHandler(amazonInappPurchasePlugin)
+        } else if (isSamsung) {
+            samsungInappPurchasePlugin = SamsungInappPurchasePlugin()
+            samsungInappPurchasePlugin!!.setContext(context)
+            samsungInappPurchasePlugin!!.setChannel(channel)
+            channel!!.setMethodCallHandler(samsungInappPurchasePlugin)
         }
     }
 
@@ -53,6 +89,8 @@ class FlutterInappPurchasePlugin : FlutterPlugin, ActivityAware {
             androidInappPurchasePlugin!!.setChannel(null)
         } else if (isAmazon) {
             amazonInappPurchasePlugin!!.setChannel(null)
+        } else if (isSamsung) {
+            samsungInappPurchasePlugin!!.setChannel(null)
         }
     }
 
@@ -61,6 +99,8 @@ class FlutterInappPurchasePlugin : FlutterPlugin, ActivityAware {
             androidInappPurchasePlugin!!.setActivity(binding.activity)
         } else if (isAmazon) {
             amazonInappPurchasePlugin!!.setActivity(binding.activity)
+        } else if (isSamsung) {
+            samsungInappPurchasePlugin!!.setActivity(binding.activity)
         }
     }
 
@@ -70,6 +110,8 @@ class FlutterInappPurchasePlugin : FlutterPlugin, ActivityAware {
             androidInappPurchasePlugin!!.onDetachedFromActivity()
         } else if (isAmazon) {
             amazonInappPurchasePlugin!!.setActivity(null)
+        } else if (isSamsung) {
+            samsungInappPurchasePlugin!!.setActivity(null)
         }
     }
 
@@ -92,6 +134,7 @@ class FlutterInappPurchasePlugin : FlutterPlugin, ActivityAware {
     companion object {
         private var isAndroid = false
         private var isAmazon = false
+        private var isSamsung = false
 
         fun getStore(): String {
            return if (!isAndroid && !isAmazon) "none" else if (isAndroid) "play_store" else "amazon"

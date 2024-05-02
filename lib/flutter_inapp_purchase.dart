@@ -496,6 +496,7 @@ class FlutterInappPurchase {
           return await _channel
               .invokeMethod('acknowledgePurchase', <String, dynamic>{
             'token': purchasedItem.purchaseToken,
+            'receipt': purchasedItem.transactionReceipt,
           });
         }
       }
