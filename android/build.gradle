@@ -21,6 +21,9 @@ rootProject.allprojects {
         maven {
             url "../../maven_local"
         }
+        maven {
+            url "../../../maven_local"
+        }
     }
 }
 
