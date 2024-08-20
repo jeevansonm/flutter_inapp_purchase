@@ -319,8 +319,8 @@ class PurchasedItem {
   static DateTime? _extractDate(dynamic timestamp) {
     if (timestamp == null) return null;
 
-    int _toInt() => double.parse(timestamp.toString()).toInt();
-    return DateTime.fromMillisecondsSinceEpoch(_toInt());
+    int result =  int.tryParse(timestamp.toString()) ?? DateTime.now().millisecondsSinceEpoch;
+    return DateTime.fromMillisecondsSinceEpoch(result);
   }
 }
 

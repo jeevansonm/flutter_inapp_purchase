@@ -20,6 +20,8 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 class SamsungInappPurchasePlugin : MethodCallHandler {
     private val TAG = "InappPurchasePlugin"
@@ -150,11 +152,11 @@ class SamsungInappPurchasePlugin : MethodCallHandler {
         }
     }
 
-    private val consumePurchaseItemsListener : OnConsumePurchasedItemsListener = object : OnConsumePurchasedItemsListener{
+    private val consumePurchaseItemsListener: OnConsumePurchasedItemsListener = object : OnConsumePurchasedItemsListener {
 
         override fun onConsumePurchasedItems(error: ErrorVo?, consumedList: ArrayList<ConsumeVo>?) {
 
-            if(error?.errorCode == IapHelper.IAP_ERROR_NONE){
+            if (error?.errorCode == IapHelper.IAP_ERROR_NONE) {
                 safeResult!!.success("item consumed");
             }
         }
@@ -169,16 +171,24 @@ class SamsungInappPurchasePlugin : MethodCallHandler {
 
                     purchase?.let {
                         try {
+
+                            val dateString = purchase.purchaseDate
+                            val format = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                            val date = format.parse(dateString)
+                            val timestamp = date?.time
+
                             val item = getPurchaseData(
                                     purchase.itemId,
                                     purchase.paymentId,
                                     purchase.purchaseId,
-                                    purchase.purchaseDate,
+                                    timestamp?.toString(),
                                     purchase.passThroughParam
                             )
                             Log.d(TAG, "opr Putting $item")
                             safeResult!!.success(item.toString())
+                            Log.d(TAG, "before invoking purchase updated")
                             safeResult!!.invokeMethod("purchase-updated", item.toString())
+                            Log.d(TAG, "after invoking purchase updated")
                         } catch (e: JSONException) {
                             safeResult!!.error(TAG, "E_BILLING_RESPONSE_JSON_PARSE_ERROR", e.message)
                         }
@@ -206,13 +216,21 @@ class SamsungInappPurchasePlugin : MethodCallHandler {
 
                                 val item = JSONObject()
 
+                                val dateString = purchase.purchaseDate
+                                val format = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                                val date = format.parse(dateString)
+                                val timestamp = date?.time
+
+                                Log.d(TAG, "timestamp = $timestamp")
+                                Log.d(TAG, "date string = $dateString")
+
                                 item.put("productId", purchase.itemId)
                                 item.put("transactionId", purchase.paymentId)
-                                item.put("transactionDate", purchase.purchaseDate)
+                                item.put("transactionDate", timestamp?.toString())
                                 item.put("transactionReceipt", purchase.purchaseId)
                                 item.put("purchaseToken", purchase.passThroughParam)
                                 item.put("signatureAndroid", "")
-                                item.put("purchaseStateAndroid", "")
+//                                item.put("purchaseStateAndroid", "")
 //                                if (type == BillingClient.ProductType.INAPP) {
 //                                    item.put("isAcknowledgedAndroid", purchase.isAcknowledged)
 //                                } else if (type == BillingClient.ProductType.SUBS) {
@@ -438,7 +456,7 @@ class SamsungInappPurchasePlugin : MethodCallHandler {
     @Throws(JSONException::class)
     fun getPurchaseData(
             productId: String?, transactionId: String?, transactionReceipt: String?,
-            transactionDate: String?, purchaseToken:String?
+            transactionDate: String?, purchaseToken: String?
     ): JSONObject {
         val item = JSONObject()
         item.put("productId", productId)
