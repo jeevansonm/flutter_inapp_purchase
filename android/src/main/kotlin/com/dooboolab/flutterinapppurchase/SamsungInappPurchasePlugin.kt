@@ -63,12 +63,11 @@ class SamsungInappPurchasePlugin : MethodCallHandler {
             "initConnection" -> {
                 iapHelper = IapHelper.getInstance(context)
 
-                if (BuildConfig.DEBUG) {
-                    iapHelper?.setOperationMode(HelperDefine.OperationMode.OPERATION_MODE_TEST)
-                } else {
+//                if (BuildConfig.DEBUG) {
 //                    iapHelper?.setOperationMode(HelperDefine.OperationMode.OPERATION_MODE_TEST)
+//                } else {
                     iapHelper?.setOperationMode(HelperDefine.OperationMode.OPERATION_MODE_PRODUCTION)
-                }
+//                }
 
                 safeResult!!.success("Billing client ready")
             }

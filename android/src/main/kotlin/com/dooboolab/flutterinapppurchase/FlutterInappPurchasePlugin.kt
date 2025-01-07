@@ -28,9 +28,9 @@ class FlutterInappPurchasePlugin : FlutterPlugin, ActivityAware {
         isSamsung = isPackageInstalled(context, "com.sec.android.app.samsungapps")
         Log.d("Is Samsung value", isSamsung.toString())
 
-        if(BuildConfig.DEBUG) {
-            Toast.makeText(context,"Samsung Amazon Android $isSamsung  $isAmazon $isAndroid", Toast.LENGTH_LONG).show()
-        }
+//        if(BuildConfig.DEBUG) {
+//            Toast.makeText(context,"Samsung Amazon Android $isSamsung  $isAmazon $isAndroid", Toast.LENGTH_LONG).show()
+//        }
 
 //        if(BuildConfig.DEBUG){
 //            isAndroid = false;
