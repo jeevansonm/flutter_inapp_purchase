@@ -47,12 +47,12 @@ android {
         disable 'InvalidPackage'
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
     }
 
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = JavaVersion.VERSION_21
     }
 }
 
@@ -63,9 +63,9 @@ dependencies {
 //    implementation fileTree(dir: 'libs', include: ['*.aar'])
     implementation 'com.jeevan:samsung-iap:6.1.1'
 
-    def billing_version = "6.0.1"
+    def billing_version = "7.1.1"
 
-    implementation "com.android.billingclient:billing-ktx:$billing_version"
+    implementation "com.android.billingclient:billing:$billing_version"
     implementation 'com.amazon.device:amazon-appstore-sdk:3.0.3'
 //    implementation files('jars/in-app-purchasing-2.0.76.jar')
     implementation 'androidx.annotation:annotation:1.6.0'
